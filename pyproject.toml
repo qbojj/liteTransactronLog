@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "litetranslog"
+dynamic = ["version"]
+dependencies = [
+    "transactron >= 0.13.0",
+]
+requires-python = ">=3.13"
