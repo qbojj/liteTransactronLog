@@ -10,51 +10,9 @@ from transactron.utils.amaranth_ext.elaboratables import MultiPriorityEncoder
 
 from logging import ERROR
 
-from dataclasses import dataclass
-from dataclasses_json import dataclass_json
-
 from collections.abc import Callable
 
-
-@dataclass_json
-@dataclass
-class DataFormatInfo:
-    signed: bool
-    width: int
-
-
-@dataclass_json
-@dataclass
-class LogInfo:
-    id: int
-    info: logging.LogRecordInfo
-    dataspec: list[DataFormatInfo]
-
-
-@dataclass_json
-@dataclass
-class HwLoggerSpec:
-    timestamp_width: int
-    max_event_id_width: int
-    max_event_data_width: int
-    superscalarity: int
-    depth: int
-    log_infos: list[LogInfo]
-
-    def encode(self, file_name: str):
-        """
-        Encodes the hwlogger information as JSON and saves it to a file.
-        """
-        with open(file_name, "w") as fp:
-            fp.write(self.to_json())  # type: ignore
-
-    @staticmethod
-    def decode(file_name: str) -> "GenerationInfo":
-        """
-        Loads the hwlogger information from a JSON file.
-        """
-        with open(file_name) as fp:
-            return HwLoggerSpec.from_json(fp.read())  # type: ignore
+from .json_structs import LogRecordInfo, HwLoggerSpec, LogInfo, DataFormatInfo, LogChunkInfo
 
 
 class LiteTransLogCapturer(Component):
@@ -142,10 +100,15 @@ class LiteTransLogCapturer(Component):
         for i, source in enumerate(records):
             self._event_info.append(LogInfo(
                 id=i,
-                info=logging.LogRecordInfo(
+                info=LogRecordInfo(
                     logger_name=source.logger_name,
                     level=source.level,
-                    format_spec=source.format_spec,
+                    format_spec=[
+                        LogChunkInfo(
+                            is_fmt=lci.is_fmt,
+                            fmt_or_str=lci.fmt_or_str,
+                        ) for lci in source.format_spec
+                    ],
                     location=source.location,
                 ),
                 dataspec=[
